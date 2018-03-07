@@ -1,24 +1,3 @@
-package assign1
-
-import java.net.InetAddress
-
-import org.apache.log4j.Logger
-import parascale.actor.last.{Actor, Relay, Task}
-import parascale.util.{getPropertyOrElse, sleep}
-
-/**
-  * 9 * This object spawns an actor which is bound to a "relay" actor.
-  * 10 * The relay actor forwards message from this actor to a remote
-  * 11 * actor on another host.
-  * 12 */
-
-object ActorA extends App {
-  val LOG = Logger.getLogger(getClass)
-
-  // Instantiating actor automatically starts it
-  new ActorA
-}
-
 /**
   * This actor initiates communication with remote actor on a different host.
   */

@@ -81,7 +81,7 @@ class PerfectDispatcher(sockets: List[String]) extends Dispatcher(sockets) {
           }
 
           val answer = if (sum == (candidate * 2)) "YES" else "NO"
-          println("Is " + candidate + " perfect? " + answer
+          println("Is " + candidate + " perfect? " + answer)
       }
     }
   }

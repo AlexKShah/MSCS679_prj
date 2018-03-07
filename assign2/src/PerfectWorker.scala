@@ -6,11 +6,8 @@ package assign2
 import org.apache.log4j.Logger
 import parascale.actor.last.{Task, Worker}
 import parascale.util._
-
-case class Partition(start: Long, end: Long, candidate: Long)
-  extends Serializable
-
-case class Result(sum: Long, t0: Long, t1: Long) extends Serializable
+import scala.concurrent.{Await, Future}
+import scala.concurrent.ExecutionContext.Implicits.global
 
 /**
   * Spawns workers on the localhost.
@@ -77,17 +74,16 @@ class PerfectWorker(port: Int) extends Worker(port) {
         val upper: Long = end min (k + 1) * RANGE
         sumOfFactorsInRange_(lower, upper, candidate)
       }
-
+      val t0 = System.nanoTime()
       val total = futures.foldLeft(0L) {
         (sum, future) =>
-          val t0 = System.nanoTime()
           import scala.concurrent.duration._
           val futureresult = Await.result(future, 100 seconds)
-          sum = sum + futureresult
-          val t1 = System.nanoTime()
-          val partialresult = Result(sum, t0, t1)
-          partialresult
+          sum+futureresult
       }
+      val t1 = System.nanoTime()
+      val partialresult = Result(total, t0, t1)
+      partialresult
     }
 
     def sumOfFactorsInRange_(lower: Long, upper: Long, number: Long): Long = {
