@@ -10,7 +10,7 @@ import parascale.util._
 case class Partition(start: Long, end: Long, candidate: Long)
   extends Serializable
 
-case class Result(sum: Long, t0: Long, t1: Long) extends Serializable
+case class Result(sum: Long) extends Serializable
 
 /**
   * Spawns a dispatcher to connect to multiple workers.
@@ -56,6 +56,7 @@ class PerfectDispatcher(sockets: List[String]) extends Dispatcher(sockets) {
   def act: Unit = {
     (0 until candidates.length).foreach { index =>
       val candidate = candidates(index)
+      val t0 = System.nanoTime()
 
       val aTask = Partition(1, candidate / 2 - 1, candidate)
       val bTask = Partition(candidate / 2, candidate, candidate)
@@ -69,21 +70,20 @@ class PerfectDispatcher(sockets: List[String]) extends Dispatcher(sockets) {
       }
 
       while (true) {
-        var sum = 0
+        var sum = 0L
         receive match {
-          case task: Task if task.kind == Task.REPLY =>
+          case task: Task if (task.kind == Task.REPLY) =>
             LOG.info("received reply " + task)
-            task.payload match {
-              case result: Result =>
-                val (partsum, t0, t1) = result
-                sum = sum + partsum
-            }
-
-            val answer = if (sum == (candidate * 2)) "YES" else "NO"
-            println("Is " + candidate + " perfect? " + answer)
+            val result = task.payload.asInstanceOf[Result]
+            sum += result.sum
         }
+
+        val t1 = System.nanoTime()
+        val dt = t1 - t0 / 1000000000.0
+
+        val answer = if (sum == (candidate * 2)) "YES" else "NO"
+        println("Is " + candidate + " perfect? " + answer + ". TN= " + dt)
       }
     }
   }
 }
-

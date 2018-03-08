@@ -60,20 +60,19 @@ class PerfectWorker(port: Int) extends Worker(port) {
         case task: Task =>
           LOG.info("got task = " + task + " sending reply")
           //get Partition out of task
-          val part = task.payload
-          val partialResult = getPartialResult(part)
+          val part = task.payload.asInstanceOf[Partition]
+          val partialResult: Result = getPartialResult(part)
           sender ! partialResult
       }
     }
 
     def getPartialResult(part: Partition): Result = {
-      val (start, end, candidate) = part
       val RANGE = 1000000L
-      val numPartitions = (end.toDouble / RANGE).ceil.toInt
+      val numPartitions = ((part.end: Long).toDouble / RANGE).ceil.toInt
       val futures = for (k <- 0L until numPartitions) yield Future {
-        val lower: Long = k * RANGE + 1
-        val upper: Long = end min (k + 1) * RANGE
-        sumOfFactorsInRange_(lower, upper, candidate)
+        val lower: Long = (part.start: Long) * RANGE + 1
+        val upper: Long = (part.end: Long) min (k + 1) * RANGE
+        sumOfFactorsInRange_(lower, upper, part.candidate)
       }
       val t0 = System.nanoTime()
       val total = futures.foldLeft(0L) {
@@ -83,7 +82,7 @@ class PerfectWorker(port: Int) extends Worker(port) {
           sum + futureresult
       }
       val t1 = System.nanoTime()
-      val partialresult = Result(total, t0, t1)
+      val partialresult = Result(total)
       partialresult
     }
 
