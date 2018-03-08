@@ -5,8 +5,8 @@ package assign2
 
 import org.apache.log4j.Logger
 import parascale.actor.last.{Task, Worker}
-import parascale.util._
 import parascale.future.perfect._sumOfFactorsInRange
+import parascale.util._
 
 /**
   * Spawns workers on the localhost.
@@ -52,8 +52,6 @@ class PerfectWorker(port: Int) extends Worker(port) {
     val name = getClass.getSimpleName
     LOG.info("started " + name + " (id=" + id + ")")
 
-    val t0 = System.nanoTime()
-
     // Wait for inbound messages as tasks
     while (true) {
       receive match {
@@ -62,9 +60,11 @@ class PerfectWorker(port: Int) extends Worker(port) {
 
           //get Partition out of task
           val part = task.payload.asInstanceOf[Partition]
+          println("worker part = " + part)
 
           //repartition and get the partialresult
           val partialResult: Result = getPartialResult(part)
+          println("partial result = " + partialResult)
 
           //reply with partial result
           sender ! partialResult
@@ -75,11 +75,15 @@ class PerfectWorker(port: Int) extends Worker(port) {
       val RANGE = 1000000L
       val numPartitions = (part.candidate.toDouble / RANGE).ceil.toInt
 
-      // Start with a par collection which propogates through all forward calculations
+      println(" number partitions = " + numPartitions)
+
+      // Start with a par collection which propagates through all forward calculations
       val partitions = (0L until numPartitions).par
       val ranges = for (k <- partitions) yield {
-        val lower: Long = k * RANGE + 1
-        val upper: Long = part.candidate min (k + 1) * RANGE
+        val lower: Long = (k * RANGE + 1) max part.start
+        val upper: Long = part.end min (k + 1) * RANGE
+        println("lower = " + lower + " upper = " + upper + " for partition: " + k)
+
         (lower, upper)
       }
 
@@ -88,8 +92,11 @@ class PerfectWorker(port: Int) extends Worker(port) {
         val (lower, upper) = lowerUpper
         _sumOfFactorsInRange(lower, upper, part.candidate)
       }
+      println("sums = " + sums)
 
       val total = sums.sum
+
+      println("total = " + total)
 
       //put worker's result in a Result and return
       val partialresult = Result(total)

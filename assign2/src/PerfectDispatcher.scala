@@ -45,9 +45,9 @@ class PerfectDispatcher(sockets: List[String]) extends Dispatcher(sockets) {
   def act: Unit = {
     //iterate through all the perfect numbers to test
     //as "candidate"
-    (0 until candidates.length).foreach { index =>
+    (0 until 2).foreach { index =>
       val candidate = candidates(index)
-
+      println("candidate = " + candidate)
       //get and print whether candidate is perfect
       println(ask(isPerfect, candidate))
     }
@@ -77,7 +77,9 @@ class PerfectDispatcher(sockets: List[String]) extends Dispatcher(sockets) {
         val result = task.payload.asInstanceOf[Result]
         //sum up partial results received from workers
         sum += result.sum
+        println("sum = " + sum)
     }
+    println ("sum predicate = " + sum == (2*candidate))
     sum == (2*candidate)
   }
 
