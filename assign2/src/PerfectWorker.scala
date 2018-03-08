@@ -6,8 +6,9 @@ package assign2
 import org.apache.log4j.Logger
 import parascale.actor.last.{Task, Worker}
 import parascale.util._
-import scala.concurrent.{Await, Future}
+
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{Await, Future}
 
 /**
   * Spawns workers on the localhost.
@@ -79,7 +80,7 @@ class PerfectWorker(port: Int) extends Worker(port) {
         (sum, future) =>
           import scala.concurrent.duration._
           val futureresult = Await.result(future, 100 seconds)
-          sum+futureresult
+          sum + futureresult
       }
       val t1 = System.nanoTime()
       val partialresult = Result(total, t0, t1)

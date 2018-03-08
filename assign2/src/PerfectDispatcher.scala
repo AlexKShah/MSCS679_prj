@@ -57,7 +57,7 @@ class PerfectDispatcher(sockets: List[String]) extends Dispatcher(sockets) {
     (0 until candidates.length).foreach { index =>
       val candidate = candidates(index)
 
-      val aTask = Partition(0, candidate / 2 - 1, candidate)
+      val aTask = Partition(1, candidate / 2 - 1, candidate)
       val bTask = Partition(candidate / 2, candidate, candidate)
 
       LOG.info("sockets to workers = " + sockets)
@@ -67,21 +67,21 @@ class PerfectDispatcher(sockets: List[String]) extends Dispatcher(sockets) {
         workers(0) ! aTask
         workers(1) ! bTask
       }
-    }
 
-    while (true) {
-      var sum = 0
-      receive match {
-        case task: Task if task.kind == Task.REPLY =>
-          LOG.info("received reply " + task)
-          task.payload match {
-            case result: Result =>
-              val (partsum, t0, t1) = result
-              sum = sum + partsum
-          }
+      while (true) {
+        var sum = 0
+        receive match {
+          case task: Task if task.kind == Task.REPLY =>
+            LOG.info("received reply " + task)
+            task.payload match {
+              case result: Result =>
+                val (partsum, t0, t1) = result
+                sum = sum + partsum
+            }
 
-          val answer = if (sum == (candidate * 2)) "YES" else "NO"
-          println("Is " + candidate + " perfect? " + answer)
+            val answer = if (sum == (candidate * 2)) "YES" else "NO"
+            println("Is " + candidate + " perfect? " + answer)
+        }
       }
     }
   }
