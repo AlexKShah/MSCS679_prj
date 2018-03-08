@@ -45,7 +45,7 @@ class PerfectDispatcher(sockets: List[String]) extends Dispatcher(sockets) {
   def act: Unit = {
     //iterate through all the perfect numbers to test
     //as "candidate"
-    (0 until 2).foreach { index =>
+    (0 until 1).foreach { index =>
       val candidate = candidates(index)
       println("candidate = " + candidate)
       //get and print whether candidate is perfect
@@ -61,7 +61,8 @@ class PerfectDispatcher(sockets: List[String]) extends Dispatcher(sockets) {
 
     LOG.info("sockets to workers = " + sockets)
 
-    //iterate through hosts, we're only using A/B
+    // iterate through hosts,
+    // hard code numbers since we're only using A/B
     (0 until sockets.length).foreach { k =>
 
       LOG.info("sending message to worker " + k)
@@ -70,17 +71,24 @@ class PerfectDispatcher(sockets: List[String]) extends Dispatcher(sockets) {
       workers(1) ! bTask
     }
 
-    var sum = 0L
-    receive match {
-      case task: Task if (task.kind == Task.REPLY) =>
-        LOG.info("received reply " + task)
-        val result = task.payload.asInstanceOf[Result]
-        //sum up partial results received from workers
-        sum += result.sum
-        println("sum = " + sum)
+    //TODO: not receiving partial results correctly
+    //Sum partial results from workers
+    var sum = 0L //placeholder
+    var count = 0
+    while (count < sockets.length) {
+      receive match {
+        case task: Task if (task.kind == Task.REPLY) =>
+          task.payload match {
+            case result: Result =>
+              sum + result.sum
+              println("sum for " + candidate + " = " + sum)
+              count += 1
+          }
+      }
+      println("count = " + count)
     }
-    println ("sum predicate = " + sum == (2*candidate))
-    sum == (2*candidate)
+    //is the candidate perfect? return a Boolean
+    sum == (2 * candidate)
   }
 
   def ask(method: Long => Boolean, number: Long): String = {
