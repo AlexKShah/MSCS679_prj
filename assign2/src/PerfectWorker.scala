@@ -6,9 +6,7 @@ package assign2
 import org.apache.log4j.Logger
 import parascale.actor.last.{Task, Worker}
 import parascale.util._
-
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{Await, Future}
+import parascale.future.perfect._sumOfFactorsInRange
 
 /**
   * Spawns workers on the localhost.
@@ -54,15 +52,20 @@ class PerfectWorker(port: Int) extends Worker(port) {
     val name = getClass.getSimpleName
     LOG.info("started " + name + " (id=" + id + ")")
 
+    val t0 = System.nanoTime()
+
     // Wait for inbound messages as tasks
     while (true) {
       receive match {
         case task: Task =>
           LOG.info("got task = " + task + " sending reply")
+
           //get Partition out of task
           val part = task.payload.asInstanceOf[Partition]
+
           //repartition and get the partialresult
           val partialResult: Result = getPartialResult(part)
+
           //reply with partial result
           sender ! partialResult
       }
@@ -70,40 +73,28 @@ class PerfectWorker(port: Int) extends Worker(port) {
 
     def getPartialResult(part: Partition): Result = {
       val RANGE = 1000000L
+      val numPartitions = (part.candidate.toDouble / RANGE).ceil.toInt
 
-      val numPartitions = ((part.end: Long).toDouble / RANGE).ceil.toInt
-
-      //define ranges for futures to work on
-      val futures = for (k <- 0L until numPartitions) yield Future {
-        val lower: Long = (part.start: Long) * RANGE + 1
-        val upper: Long = (part.end: Long) min (k + 1) * RANGE
-        sumOfFactorsInRange_(lower, upper, part.candidate)
+      // Start with a par collection which propogates through all forward calculations
+      val partitions = (0L until numPartitions).par
+      val ranges = for (k <- partitions) yield {
+        val lower: Long = k * RANGE + 1
+        val upper: Long = part.candidate min (k + 1) * RANGE
+        (lower, upper)
       }
 
-      //sum up future results to get a total result for the worker
-      val total = futures.foldLeft(0L) {
-        (sum, future) =>
-          import scala.concurrent.duration._
-          val futureresult = Await.result(future, 100 seconds)
-          sum + futureresult
+      // Ranges is a collection of 2-tuples of the lower-to-upper partition bounds
+      val sums = ranges.map { lowerUpper =>
+        val (lower, upper) = lowerUpper
+        _sumOfFactorsInRange(lower, upper, part.candidate)
       }
+
+      val total = sums.sum
 
       //put worker's result in a Result and return
       val partialresult = Result(total)
       partialresult
     }
-
-    //sum factors in range provided to future
-    def sumOfFactorsInRange_(lower: Long, upper: Long, number: Long): Long = {
-      var index: Long = lower
-      var sum = 0L
-      while (index <= upper) {
-        if (number % index == 0L)
-          sum += index
-        index += 1L
-      }
-      sum
-    }
-
   }
 }
+
