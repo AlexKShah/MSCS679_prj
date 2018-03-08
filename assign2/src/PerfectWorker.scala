@@ -61,31 +61,39 @@ class PerfectWorker(port: Int) extends Worker(port) {
           LOG.info("got task = " + task + " sending reply")
           //get Partition out of task
           val part = task.payload.asInstanceOf[Partition]
+          //repartition and get the partialresult
           val partialResult: Result = getPartialResult(part)
+          //reply with partial result
           sender ! partialResult
       }
     }
 
     def getPartialResult(part: Partition): Result = {
       val RANGE = 1000000L
+
       val numPartitions = ((part.end: Long).toDouble / RANGE).ceil.toInt
+
+      //define ranges for futures to work on
       val futures = for (k <- 0L until numPartitions) yield Future {
         val lower: Long = (part.start: Long) * RANGE + 1
         val upper: Long = (part.end: Long) min (k + 1) * RANGE
         sumOfFactorsInRange_(lower, upper, part.candidate)
       }
-      val t0 = System.nanoTime()
+
+      //sum up future results to get a total result for the worker
       val total = futures.foldLeft(0L) {
         (sum, future) =>
           import scala.concurrent.duration._
           val futureresult = Await.result(future, 100 seconds)
           sum + futureresult
       }
-      val t1 = System.nanoTime()
+
+      //put worker's result in a Result and return
       val partialresult = Result(total)
       partialresult
     }
 
+    //sum factors in range provided to future
     def sumOfFactorsInRange_(lower: Long, upper: Long, number: Long): Long = {
       var index: Long = lower
       var sum = 0L
