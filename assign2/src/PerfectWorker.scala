@@ -51,7 +51,7 @@ class PerfectWorker(port: Int) extends Worker(port) {
   override def act: Unit = {
     val name = getClass.getSimpleName
     LOG.info("started " + name + " (id=" + id + ")")
-
+    sleep(1000)
     // Wait for inbound messages as tasks
     while (true) {
       receive match {
@@ -66,7 +66,7 @@ class PerfectWorker(port: Int) extends Worker(port) {
           val partialResult: Result = getPartialResult(part)
           println("partial result = " + partialResult)
 
-          sleep(100)
+
           //reply with partial result
           sender ! partialResult
       }
@@ -84,7 +84,6 @@ class PerfectWorker(port: Int) extends Worker(port) {
         val lower: Long = (k * RANGE + 1) max part.start
         val upper: Long = part.end min (k + 1) * RANGE
         println("lower = " + lower + " upper = " + upper + " for partition: " + k)
-
         (lower, upper)
       }
 

@@ -45,7 +45,8 @@ class PerfectDispatcher(sockets: List[String]) extends Dispatcher(sockets) {
   def act: Unit = {
     //iterate through all the perfect numbers to test
     //as "candidate"
-    (0 until 3).foreach { index =>
+    (0 until candidates.length).foreach { index =>
+      sleep(1000)
       val candidate = candidates(index)
       println("candidate = " + candidate)
 
@@ -63,20 +64,14 @@ class PerfectDispatcher(sockets: List[String]) extends Dispatcher(sockets) {
     LOG.info("sockets to workers = " + sockets)
 
     // iterate through hosts,
-    // hard code numbers since we're only using A/B
-    (0 until sockets.length).foreach { k =>
-
-      LOG.info("sending message to worker " + k)
 
       workers(0) ! aTask
       workers(1) ! bTask
-    }
 
     //TODO: not receiving partial results correctly
     //Sum partial results from workers
     var sum = 0L //placeholder
     var count = 0
-    sleep(1000)
     while (count < 2) {
       receive match {
         case task: Task if (task.kind == Task.REPLY) =>
