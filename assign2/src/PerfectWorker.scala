@@ -66,6 +66,7 @@ class PerfectWorker(port: Int) extends Worker(port) {
           val partialResult: Result = getPartialResult(part)
           println("partial result = " + partialResult)
 
+          sleep(100)
           //reply with partial result
           sender ! partialResult
       }
