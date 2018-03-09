@@ -51,7 +51,7 @@ class PerfectWorker(port: Int) extends Worker(port) {
   override def act: Unit = {
     val name = getClass.getSimpleName
     LOG.info("started " + name + " (id=" + id + ")")
-    sleep(1000)
+
     // Wait for inbound messages as tasks
     while (true) {
       receive match {

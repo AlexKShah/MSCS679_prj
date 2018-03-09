@@ -46,7 +46,7 @@ class PerfectDispatcher(sockets: List[String]) extends Dispatcher(sockets) {
     //iterate through all the perfect numbers to test
     //as "candidate"
     (0 until candidates.length).foreach { index =>
-      sleep(1000)
+      sleep(100)
       val candidate = candidates(index)
       println("candidate = " + candidate)
 
