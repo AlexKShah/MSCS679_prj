@@ -13,7 +13,6 @@ import parascale.util._
   */
 object PerfectWorker extends App {
   val LOG = Logger.getLogger(getClass)
-
   LOG.info("started")
 
   // Number of hosts in this configuration
@@ -62,10 +61,8 @@ class PerfectWorker(port: Int) extends Worker(port) {
           val part = task.payload.asInstanceOf[Partition]
           println("worker part = " + part)
 
-          //repartition and get the partialresult
           val partialResult: Result = getPartialResult(part)
           println("partial result = " + partialResult)
-
 
           //reply with partial result
           sender ! partialResult
@@ -77,6 +74,9 @@ class PerfectWorker(port: Int) extends Worker(port) {
       val numPartitions = (part.candidate.toDouble / RANGE).ceil.toInt
 
       println(" number partitions = " + numPartitions)
+
+      //START TIMING
+      val t0 = System.nanoTime()
 
       // Start with a par collection which propagates through all forward calculations
       val partitions = (0L until numPartitions).par
@@ -96,10 +96,13 @@ class PerfectWorker(port: Int) extends Worker(port) {
 
       val total = sums.sum
 
+      //STOP TIMING
+      val t1 = System.nanoTime()
+
       println("total = " + total)
 
       //put worker's result in a Result and return
-      val partialresult = Result(total)
+      val partialresult = Result(t0, t1, total)
       partialresult
     }
   }
