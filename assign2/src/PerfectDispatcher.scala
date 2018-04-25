@@ -51,7 +51,7 @@ import parascale.util._
 case class Partition(start: Long, end: Long, candidate: Long)
   extends Serializable
 
-case class Result(dt: Long, sum: Long) extends Serializable
+case class Result(dt: Long, resSum: Long) extends Serializable
 
 /**
   * Spawns a dispatcher to connect to multiple workers.
@@ -100,26 +100,22 @@ class PerfectDispatcher(sockets: List[String]) extends Dispatcher(sockets) {
     val bTask = Partition(candidate / 2, candidate, candidate)
 
     LOG.info("sockets to workers = " + sockets)
-
-    // iterate through hosts,
-
-      workers(0) ! aTask
-      workers(1) ! bTask
+    workers(0) ! aTask
+    workers(1) ! bTask
 
     //Sum partial results from workers
-    var sum = 0L //placeholder
-    var count = 0
-    while (count < 2) {
-      receive match {
-        case task: Task if (task.kind == Task.REPLY) =>
-          task.payload match {
-            case result: Result =>
-              sum += result.sum
-              println("sum for " + candidate + " = " + sum)
-              count += 1
-          }
-
+    workers.foreach {
+      val replies = for (k <- workers.length) yield receive
+      val sum = replies.foldLeft(0L) {
+        receive match {
+          case task: Task if (task.kind == Task.REPLY) =>
+            task.payload match {
+              case result: Result =>
+              sum + result.resSum
+            }
+        }
       }
+
       println("count = " + count)
     }
     //is the candidate perfect? return a Boolean
