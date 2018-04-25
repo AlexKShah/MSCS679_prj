@@ -85,17 +85,17 @@ class PerfectWorker(port: Int) extends Worker(port) {
       }
 
       // Ranges is a collection of 2-tuples of the lower-to-upper partition bounds
-      val sums1 = ranges.map { lowerUpper =>
+      val sums = ranges.map { lowerUpper =>
         val (lower, upper) = lowerUpper
         _sumOfFactorsInRange(lower, upper, part.candidate)
       }
-      println("sums = " + sums)
+      val resSums = for (k <- sums) yield { k.resSum }
 
-      val sums2 = sums1 { sums1 =>
-        val (indivdt, indivsum) = sums1
-        val total = indivsum.sum
-        val dts = indivdt.sum
-      }
+      val total = resSums.sum
+
+      val dts = for (k <- sums) yield { k.dt}
+
+      val dt = dts.sum
 
       println("total = " + total)
 
@@ -118,7 +118,8 @@ class PerfectWorker(port: Int) extends Worker(port) {
       val t1 = System.nanoTime()
       val dt = (t1-t0)/1000000000
 
-      (dt, sum)
+      val res = Result(dt, sum)
+      res
     }
   }
 }
