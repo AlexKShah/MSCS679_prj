@@ -2,6 +2,7 @@ import parabond.cluster
 import org.apache.log4j.Logger
 import parascale.actor.last.{Task, Worker}
 import parascale.util._
+import parabond.cluster.Partition
 
 object ParaWorker extends App {
 

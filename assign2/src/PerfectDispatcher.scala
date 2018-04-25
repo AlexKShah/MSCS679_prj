@@ -28,7 +28,9 @@ o Does sleep(100) fix a race condition?
 PerfectWorker 20/40
 o In the comprehension calculate partial dt for each future to estimate T1.
   (I thought this was the answer to my question about the low efficiency but the code
-   has no timing measurement.) -20 Good programming style 22/30
+   has no timing measurement.) -20
+
+Good programming style 22/30
 o PerfectDispatcher: count should be a val. -2
 o PerfectDispatcher: sum should be a val. -2
 o PerfectDispatcher: instead of val aTask = Partition(1, candidate / 2 - 1, candidate)
@@ -49,7 +51,7 @@ import parascale.util._
 case class Partition(start: Long, end: Long, candidate: Long)
   extends Serializable
 
-case class Result(t0: Long, t1: Long, sum: Long) extends Serializable
+case class Result(dt: Long, sum: Long) extends Serializable
 
 /**
   * Spawns a dispatcher to connect to multiple workers.
@@ -104,7 +106,6 @@ class PerfectDispatcher(sockets: List[String]) extends Dispatcher(sockets) {
       workers(0) ! aTask
       workers(1) ! bTask
 
-    //TODO: not receiving partial results correctly
     //Sum partial results from workers
     var sum = 0L //placeholder
     var count = 0

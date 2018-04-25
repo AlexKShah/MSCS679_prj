@@ -5,7 +5,7 @@ package assign2
 
 import org.apache.log4j.Logger
 import parascale.actor.last.{Task, Worker}
-import parascale.future.perfect._sumOfFactorsInRange
+//import parascale.future.perfect._sumOfFactorsInRange
 import parascale.util._
 
 /**
@@ -75,9 +75,6 @@ class PerfectWorker(port: Int) extends Worker(port) {
 
       println(" number partitions = " + numPartitions)
 
-      //START TIMING
-      val t0 = System.nanoTime()
-
       // Start with a par collection which propagates through all forward calculations
       val partitions = (0L until numPartitions).par
       val ranges = for (k <- partitions) yield {
@@ -88,22 +85,40 @@ class PerfectWorker(port: Int) extends Worker(port) {
       }
 
       // Ranges is a collection of 2-tuples of the lower-to-upper partition bounds
-      val sums = ranges.map { lowerUpper =>
+      val sums1 = ranges.map { lowerUpper =>
         val (lower, upper) = lowerUpper
         _sumOfFactorsInRange(lower, upper, part.candidate)
       }
       println("sums = " + sums)
 
-      val total = sums.sum
-
-      //STOP TIMING
-      val t1 = System.nanoTime()
+      val sums2 = sums1 { sums1 =>
+        val (indivdt, indivsum) = sums1
+        val total = indivsum.sum
+        val dts = indivdt.sum
+      }
 
       println("total = " + total)
 
       //put worker's result in a Result and return
-      val partialresult = Result(t0, t1, total)
+      val partialresult = Result(dt, total)
       partialresult
+    }
+    def _sumOfFactorsInRange(lower: Long, upper: Long, number: Long): Result = {
+     val t0 = System.nanoTime()
+      var index: Long = lower
+
+      var sum = 0L
+
+      while (index <= upper) {
+        if (number % index == 0L)
+          sum += index
+
+        index += 1L
+      }
+      val t1 = System.nanoTime()
+      val dt = (t1-t0)/1000000000
+
+      (dt, sum)
     }
   }
 }
