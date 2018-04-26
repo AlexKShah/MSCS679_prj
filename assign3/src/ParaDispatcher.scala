@@ -1,5 +1,5 @@
 import org.apache.log4j.Logger
-import parascale.actor.last.Dispatcher
+import parascale.actor.last.{Dispatcher, Task}
 import parascale.util.getPropertyOrElse
 import parabond.cluster._
 
@@ -39,9 +39,25 @@ object ParaDispatcher extends App {
       ramp.foreach { n =>
         //c
         val checkIds = checkReset(n)
+
+        val t0 = System.nanoTime()
         //d, e, f
         workers(0) ! Partition(0, n/2, 0)
         workers(1) ! Partition(0, n/2, n/2)
+
+        val replies = for (k <- 0 to  workers.length) yield receive
+
+        val t1 = System.nanoTime()
+
+        val dtsList = for (_ <- replies) yield receive match {
+          case task: Task if (task.kind == Task.REPLY) =>
+            task.payload match {
+              case result: Result =>
+                result.t1-result.t0
+            }
+        }
+        val T1 = dtsList.sum seconds
+        val TN = t1 - t0 seconds
 
         //g, h
         check(checkIds)
