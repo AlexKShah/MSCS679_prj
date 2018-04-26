@@ -1,17 +1,19 @@
+import org.apache.log4j.Logger
 import parascale.actor.last.Dispatcher
 import parascale.util.getPropertyOrElse
 import parabond.cluster._
 
 case class Result(t0: Int, t1: Int) extends Serializable
 //not in parabond.cluster?
-case class Partition(n: Long, begin: Long) extends Serializable
+//case class Partition(seed: Long, n: Long, begin: Long) extends Serializable
 
 object ParaDispatcher extends App {
 
   class ParaDispatcher(sockets: List[String]) extends Dispatcher(sockets) {
 
     def act: Unit = {
-
+      val LOG = Logger.getLogger(getClass)
+      LOG.info("started")
       /*
       a. Output the report header.
       b. Get the next n, that is, number of portfolios to price.
@@ -29,15 +31,23 @@ object ParaDispatcher extends App {
 
       //a
       println("header TODO")
-
       //b
       val nportf = getPropertyOrElse("nportf", "1000")
 
       val ramp = List(1000, 2000, 4000, 8000, 16000, 32000, 64000, 100000)
 
       ramp.foreach { n =>
-        workers(0) ! Partition(n/2, 0)
-        workers(1) ! Partition(n/2, n/2)
+        //c
+        val checkIds = checkReset(n)
+        //d, e, f
+        workers(0) ! Partition(0, n/2, 0)
+        workers(1) ! Partition(0, n/2, n/2)
+
+        //g, h
+        check(checkIds)
+
+        //i
+        report(LOG, analysis, checkIds)
       }
 
     }

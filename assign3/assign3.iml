@@ -11,7 +11,7 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../ParaScale.jar!/" />
+          <root url="jar://$MODULE_DIR$/../log4j-1.2.17.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -20,7 +20,7 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../log4j-1.2.17.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../ParaScale/out/artifacts/ParaScale_jar/ParaScale.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
