@@ -1,14 +1,17 @@
 import org.apache.log4j.Logger
-import parascale.actor.last.Worker
+import parascale.actor.last.{Task, Worker}
 import parascale.util._
 import parabond.cluster._
-import parascale.parabond.util.Task
+//import parascale.parabond.util
 
 object ParaWorker extends App {
   val LOG = Logger.getLogger(getClass)
   LOG.info("started")
 
+  //a. If worker running on a single host, spawn two workers else spawn one worker.
   val nhosts = getPropertyOrElse("nhosts", 1)
+
+  val nodetype = getPropertyOrElse("nodetype", 0)
 
   // One-port configuration
   val port1 = getPropertyOrElse("port", 8000)
@@ -30,22 +33,24 @@ object ParaWorker extends App {
 class ParaWorker(port: Int) extends Worker(port) {
   import ParaWorker._
   override def act: Unit = {
+    //b. Wait for a task.
     while (true) {
       receive match {
         case task: Task =>
           LOG.info("got task = " + task + " sending reply")
 
           //get Partition out of task
+          //c. Create a Partition.
           val part = task.payload.asInstanceOf[Partition]
-          //println("worker part = " + part)
 
-          //call BasicNode/MemoryBoundNode
+          println("worker part = " + part)
 
-          val partialResult: Result = somefunction(part)
-         //println("partial result = " + partialResult)
-
-          //reply with partial result
-          sender ! partialResult
+          //d. Create a Node with the Partition.
+          //e. Invoke analyze on the Node and wait for it to finish.
+          new BasicNode {
+            val partialResult: Analysis = analyze(part)
+            sender ! partialResult
+          }
       }
     }
     /*

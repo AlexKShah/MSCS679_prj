@@ -137,6 +137,8 @@ class PerfectDispatcher(sockets: List[String]) extends Dispatcher(sockets) {
             result.resSum
         }
     }
+
+    // reduce partialsum Lists to sums
     val sum: Long = sumList.sum
     val dts: Long = dtsList.sum
 

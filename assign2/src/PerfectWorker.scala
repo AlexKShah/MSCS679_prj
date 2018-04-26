@@ -89,26 +89,27 @@ class PerfectWorker(port: Int) extends Worker(port) {
         val (lower, upper) = lowerUpper
         _sumOfFactorsInRange(lower, upper, part.candidate)
       }
-      val resSums = for (k <- sums) yield { k.resSum }
 
+      //sum partial result sums
+      val resSums = for (k <- sums) yield { k.resSum }
       val total = resSums.sum
 
+      //sum partial times
       val dts = for (k <- sums) yield { k.dt}
-
       val dt = dts.sum
 
       println("total = " + total)
+      println("dt = " + dt)
 
       //put worker's result in a Result and return
       val partialresult = Result(dt, total)
       partialresult
     }
+
     def _sumOfFactorsInRange(lower: Long, upper: Long, number: Long): Result = {
      val t0 = System.nanoTime()
       var index: Long = lower
-
       var sum = 0L
-
       while (index <= upper) {
         if (number % index == 0L)
           sum += index
@@ -117,7 +118,6 @@ class PerfectWorker(port: Int) extends Worker(port) {
       }
       val t1 = System.nanoTime()
       val dt = (t1-t0)/1000000000
-
       val res = Result(dt, sum)
       res
     }
