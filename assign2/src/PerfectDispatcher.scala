@@ -53,7 +53,7 @@ case class Partition(start: Long, end: Long, candidate: Long)
 
 case class Result(dt: Long, resSum: Long) extends Serializable
 
-case class Reportable(candidate: Long, t1: Long, tn: Long, ans: Long)
+case class Reportable(candidate: Long, dt: Long, ans: Boolean)
 
 /**
   * Spawns a dispatcher to connect to multiple workers.
@@ -91,12 +91,17 @@ class PerfectDispatcher(sockets: List[String]) extends Dispatcher(sockets) {
       val candidate = candidates(index)
       println("candidate = " + candidate)
       //get and print whether candidate is perfect
-      //println(ask(isPerfect, candidate))
+      println(ask(isPerfect, candidate))
     }
   }
 
-  def report(reportable: Reportable) = {
-    //TODO
+  def report(reportable: Reportable, tn: Long) = {
+    val thiscandidate = reportable.candidate
+    val thist1 = reportable.dt
+    val thistn = tn
+    val thisans = reportable.ans
+
+    println("Is " + thiscandidate + " perfect? " + thisans + "! t1 = " + thist1/ 1000000000.0 + "s" + ". tn = " + thistn/1000000000.0 + "s.")
   }
 
   def isPerfect(candidate: Long): Reportable = {
@@ -111,11 +116,12 @@ class PerfectDispatcher(sockets: List[String]) extends Dispatcher(sockets) {
     workers(0) ! aTask
     workers(1) ! bTask
 
+
     //receive replies
-    val replies = for (k <- workers.length) yield receive
+    val replies = for (k <- 0 to workers.length) yield receive
 
     //unpack dts
-    val dts: Long = for (k <- replies) yield receive match {
+    val dtsList = for (_ <- replies) yield receive match {
       case task: Task if (task.kind == Task.REPLY) =>
         task.payload match {
           case result: Result =>
@@ -124,27 +130,30 @@ class PerfectDispatcher(sockets: List[String]) extends Dispatcher(sockets) {
     }
 
     //unpack result sums
-    val sum: Long = for (k <- replies) yield receive match {
+    val sumList = for (_ <- replies) yield receive match {
       case task: Task if (task.kind == Task.REPLY) =>
         task.payload match {
           case result: Result =>
             result.resSum
         }
     }
+    val sum: Long = sumList.sum
+    val dts: Long = dtsList.sum
 
     //is the candidate perfect? return a Boolean
     val ans = (sum == (2 * candidate))
-    //build a report for this candidate
-    (candidate, dts, ans)
+
+    //build a reportable for this candidate, pass back to ask
+    val reportable: Reportable = Reportable(candidate, dts, ans)
+    reportable
   }
 
-  def ask(method: Long => Boolean, number: Long): String = {
+  def ask(method: Long => Reportable, number: Long): Unit = {
     val t0 = System.nanoTime
-    val result = method(number)
+    val result: Reportable = method(number)
     val t1 = System.nanoTime
     val dt = t1-t0
-    val reportable: Reportable = (result.candidate, result.dts, dt, result.ans)
-    report(reportable)
-    //"Is " + number + " perfect? " + answer + "! dt = " + (t1 - t0) / 1000000000.0 + "s"
+
+    report(result, dt)
   }
 }
