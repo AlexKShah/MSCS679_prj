@@ -33,7 +33,7 @@ object ParaDispatcher extends App {
       //a. Output the report header.
       println("header TODO")
       //b. Get the next n, that is, number of portfolios to price.
-      val nportf = getPropertyOrElse("nportf", "1000")
+      val n = getPropertyOrElse("n", "1000")
 
       val ladder = List(1000, 2000, 4000, 8000, 16000, 32000, 64000, 100000)
 
