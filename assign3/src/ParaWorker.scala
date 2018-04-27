@@ -47,10 +47,11 @@ class ParaWorker(port: Int) extends Worker(port) {
 
           //d. Create a Node with the Partition.
           //e. Invoke analyze on the Node and wait for it to finish.
-          new BasicNode {
-            val partialResult: Analysis = analyze(part)
-            sender ! partialResult
+          val analysis = new BasicNode analyze(part)
+          val partialT1 = analysis.results.foldLeft(0L) { (sum, job)=>
+            sum + (job.result.t1 - job.result.t0)
           }
+          sender ! partialT1
       }
     }
     /*

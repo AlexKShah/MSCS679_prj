@@ -2,6 +2,7 @@ import org.apache.log4j.Logger
 import parascale.actor.last.{Dispatcher, Task}
 import parascale.util.getPropertyOrElse
 import parabond.cluster.{report, check, checkReset, Partition, Analysis}
+import parabond.cluster._
 
 case class Result(t0: Int, t1: Int) extends Serializable
 //not in parabond.cluster?
@@ -53,8 +54,6 @@ object ParaDispatcher extends App {
 
         val replies = for (k <- 0 to  workers.length) yield receive
 
-        val t1 = System.nanoTime()
-
         val dtsList = for (_ <- replies) yield receive match {
           case task: Task if (task.kind == Task.REPLY) =>
             task.payload match {
@@ -63,12 +62,25 @@ object ParaDispatcher extends App {
                 (result.t0 - result.t1)
             }
         }
-        val T1 = dtsList.sum / 1000000000.0
-        val TN = (t1 - t0) / 1000000000.0
+
+        // sum up partial T1's
+        val T1 = replies.foldLeft(0L) { (sum, reply) =>
+          reply match {
+            case task: Task if (task.kind == Task.REPLY) =>
+              val result = task.payload.asInstanceOf[Result]
+              sum + (result.t1-result.t0)
+          }
+        } seconds
+
+        val t1 = System.nanoTime()
+
+        //calculate TN
+        val TN = (t1 - t0) seconds
 
         //g. Wait for results.
         //h. Test the check portfolios.
-        check(checkIds)
+        //TODO report the missed.length
+        val missed = check(checkIds)
 
         //i. Output the performance statistics.
         //report(LOG, analysis, checkIds)
