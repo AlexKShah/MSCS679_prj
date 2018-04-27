@@ -11,7 +11,12 @@ object ParaWorker extends App {
   //a. If worker running on a single host, spawn two workers else spawn one worker.
   val nhosts = getPropertyOrElse("nhosts", 1)
 
-  val nodetype = getPropertyOrElse("nodetype", 0)
+  //receive parameter to change node type, defaults to basic node
+  val prop = getPropertyOrElse("node","parabond.cluster.BasicNode")
+  val clazz = Class.forName(prop)
+  import parabond.cluster.Node
+  val node = clazz.newInstance.asInstanceOf[Node]
+  //val nodetype = getPropertyOrElse("nodetype", 0)
 
   // One-port configuration
   val port1 = getPropertyOrElse("port", 8000)
@@ -42,12 +47,11 @@ class ParaWorker(port: Int) extends Worker(port) {
           //get Partition out of task
           //c. Create a Partition.
           val part = task.payload.asInstanceOf[Partition]
-
           println("worker part = " + part)
 
           //d. Create a Node with the Partition.
           //e. Invoke analyze on the Node and wait for it to finish.
-          val analysis = new BasicNode analyze(part)
+          val analysis = node analyze(part)
           val partialT1 = analysis.results.foldLeft(0L) { (sum, job)=>
             sum + (job.result.t1 - job.result.t0)
           }
