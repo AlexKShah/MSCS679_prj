@@ -30,11 +30,11 @@ class ParaDispatcher(sockets: List[String]) extends Dispatcher(sockets) {
 
     //Header
     println(String.format("%-9s", "n") +
+      String.format("%-9s", "Missed") +
       String.format("%-9s", "T1") +
       String.format("%-9s", "TN") +
-      String.format("%-7s", "R") +
-      String.format("%-7s", "e") +
-      String.format("%-9s", "Missed")
+      String.format("%-6s", "R") +
+      String.format("%-6s", "e")
     )
 
     //b. Get the next n, that is, number of portfolios to price.
@@ -77,9 +77,9 @@ class ParaDispatcher(sockets: List[String]) extends Dispatcher(sockets) {
       val TN = (t1 - t0) seconds
       val speedup = T1 / TN
       val e = speedup / numCores
-      val misses = check(checkIds).length
+      val missed = check(checkIds).length
 
-      println("%-9s %-9.2f %-9.2f %5.2f %5.2f %-9s".format(n, T1, TN, speedup, e, misses))
+      println("%-9s %-7s %-7.2f %-7.2f %2.4f %2.4f ".format(n, missed, T1, TN, speedup, e))
     }
   }
 }
