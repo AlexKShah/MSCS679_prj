@@ -1,92 +1,85 @@
-import org.apache.log4j.Logger
+import org.apache.log4j.{Level, Logger}
 import parascale.actor.last.{Dispatcher, Task}
 import parascale.util.getPropertyOrElse
-import parabond.cluster.{report, check, checkReset, Partition, Analysis}
+import parabond.cluster.{Analysis, Partition, check, checkReset}
 import parabond.cluster._
 
-case class Result(t0: Int, t1: Int) extends Serializable
-//not in parabond.cluster?
-//case class Partition(seed: Long, n: Long, begin: Long) extends Serializable
-
 object ParaDispatcher extends App {
+  val LOG = Logger.getLogger(getClass)
+  Logger.getRootLogger.setLevel(Level.OFF)
+  //-Dnhosts=2 -Dsocket=IP:socket
+  val socket2 = getPropertyOrElse("socket", "localhost:9000")
+  new ParaDispatcher(List("localhost:8000", socket2))
+}
 
-  class ParaDispatcher(sockets: List[String]) extends Dispatcher(sockets) {
+class ParaDispatcher(sockets: List[String]) extends Dispatcher(sockets) {
 
-    def act: Unit = {
-      val LOG = Logger.getLogger(getClass)
-      LOG.info("started")
-      /*
-      a. Output the report header.
-      b. Get the next n, that is, number of portfolios to price.
-      c. Reset the check portfolio prices.
-      d. Create two workers by passing the dispatcher constructor two sockets.
-      e. Create two partitions:
-        A) Partition(seed=0, n=n/2, begin=0) and
-        B) Partition(seed=0, n=n/2, begin=n/2)
-      f. Send worker(0) the first partition and worker(1) the second partition.
-      g. Wait for results.
-      h. Test the check portfolios.
-      i. Output the performance statistics.
-      j. Repeat step b = Get the next n, that is, number of portfolios to price.
-       */
+  def act: Unit = {
+    import ParaDispatcher._
 
-      //a. Output the report header.
-      println("header TODO")
-      //b. Get the next n, that is, number of portfolios to price.
-      val n = getPropertyOrElse("n", "1000")
+    //a. Output the report header.
+    println("ParaBond Portfolio Analysis")
+    println("Alex Shah")
+    println("4/28/18")
+    val numCores = Runtime.getRuntime().availableProcessors()
+    println("Cores: " + numCores)
+    println("Number of workers: " + workers.length)
+    println;
+    println("REPORT:");
+    println;
 
-      val ladder = List(1000, 2000, 4000, 8000, 16000, 32000, 64000, 100000)
+    //Header
+    println(String.format("%-9s", "n") +
+      String.format("%-9s", "T1") +
+      String.format("%-9s", "TN") +
+      String.format("%-7s", "R") +
+      String.format("%-7s", "e") +
+      String.format("%-9s", "Missed")
+    )
 
-      //j. Repeat step b for each rung
-      ladder.foreach { rung =>
-        //c. Reset the check portfolio prices.
-        val checkIds = checkReset(rung)
+    //b. Get the next n, that is, number of portfolios to price.
+    val n = getPropertyOrElse("n", 100)
 
-        val t0 = System.nanoTime()
+    val ladder = List(100, 2000, 4000, 8000, 16000, 32000, 64000, 100000)
 
-        //d. Create two workers by passing the dispatcher constructor two sockets.
-        //e. Create two partitions:
-        //  A) Partition(seed=0, n=n/2, begin=0) and
-        //  B) Partition(seed=0, n=n/2, begin=n/2)
-        //f. Send worker(0) the first partition and worker(1) the second partition.
-        workers(0) ! Partition(0, rung/2, 0)
-        workers(1) ! Partition(0, rung/2, rung/2)
+    //j. Repeat step b for each rung
+    ladder.foreach { rung =>
+      //println("rung = " + rung)
 
-        val replies = for (k <- 0 to  workers.length) yield receive
+      //c. Reset the check portfolio prices.
+      val checkIds = checkReset(rung)
 
-        val dtsList = for (_ <- replies) yield receive match {
+      val t0 = System.nanoTime()
+
+      //d. Create two workers by passing the dispatcher constructor two sockets.
+      //e. Create two partitions:
+      //  A) Partition(seed=0, n=n/2, begin=0) and
+      //  B) Partition(seed=0, n=n/2, begin=n/2)
+      //f. Send worker(0) the first partition and worker(1) the second partition.
+      import parabond.cluster.Partition
+      workers(0) ! Partition(rung / 2, 0)
+      workers(1) ! Partition(rung / 2, rung / 2)
+
+      val replies = for (k <- 0 until workers.length) yield receive
+
+      // sum up partial T1's
+      val T1 = replies.foldLeft(0L) { (sum, reply) =>
+        reply match {
           case task: Task if (task.kind == Task.REPLY) =>
-            task.payload match {
-              case result: Analysis =>
-                report(LOG, result, checkIds)
-                (result.t0 - result.t1)
-            }
+            import parascale.parabond.util.Result
+            val result = task.payload.asInstanceOf[Result]
+            //i. Output the performance statistics.
+            sum + (result.t1 - result.t0)
         }
+      } seconds
 
-        // sum up partial T1's
-        val T1 = replies.foldLeft(0L) { (sum, reply) =>
-          reply match {
-            case task: Task if (task.kind == Task.REPLY) =>
-              val result = task.payload.asInstanceOf[Result]
-              sum + (result.t1-result.t0)
-          }
-        } seconds
+      val t1 = System.nanoTime()
+      val TN = (t1 - t0) seconds
+      val speedup = T1 / TN
+      val e = speedup / numCores
+      val misses = check(checkIds).length
 
-        val t1 = System.nanoTime()
-
-        //calculate TN
-        val TN = (t1 - t0) seconds
-
-        //g. Wait for results.
-        //h. Test the check portfolios.
-        //TODO report the missed.length
-        val missed = check(checkIds)
-
-        //i. Output the performance statistics.
-        //report(LOG, analysis, checkIds)
-      }
-
+      println("%-9s %-9.2f %-9.2f %5.2f %5.2f %-9s".format(n, T1, TN, speedup, e, misses))
     }
   }
-
 }

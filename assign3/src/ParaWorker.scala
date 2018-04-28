@@ -2,6 +2,7 @@ import org.apache.log4j.Logger
 import parascale.actor.last.{Task, Worker}
 import parascale.util._
 import parabond.cluster._
+import parascale.parabond.util.Result
 //import parascale.parabond.util
 
 object ParaWorker extends App {
@@ -16,7 +17,6 @@ object ParaWorker extends App {
   val clazz = Class.forName(prop)
   import parabond.cluster.Node
   val node = clazz.newInstance.asInstanceOf[Node]
-  //val nodetype = getPropertyOrElse("nodetype", 0)
 
   // One-port configuration
   val port1 = getPropertyOrElse("port", 8000)
@@ -49,13 +49,18 @@ class ParaWorker(port: Int) extends Worker(port) {
           val part = task.payload.asInstanceOf[Partition]
           println("worker part = " + part)
 
+          //val checkIds = checkReset(100)
+
           //d. Create a Node with the Partition.
           //e. Invoke analyze on the Node and wait for it to finish.
           val analysis = node analyze(part)
+
+          //report(LOG, analysis, checkIds)
+
           val partialT1 = analysis.results.foldLeft(0L) { (sum, job)=>
             sum + (job.result.t1 - job.result.t0)
           }
-          sender ! partialT1
+          sender ! Result(partialT1)
       }
     }
     /*
