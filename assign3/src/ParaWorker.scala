@@ -49,8 +49,6 @@ class ParaWorker(port: Int) extends Worker(port) {
           val part = task.payload.asInstanceOf[Partition]
           println("worker part = " + part)
 
-          //val checkIds = checkReset(100)
-
           //d. Create a Node with the Partition.
           //e. Invoke analyze on the Node and wait for it to finish.
           val analysis = node analyze(part)

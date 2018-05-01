@@ -4,4 +4,4 @@
   *
   * @param s String message.
   */
-case class Y(s: String) extends Serializable
+//case class Y(s: String) extends Serializable

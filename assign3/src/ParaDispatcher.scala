@@ -20,12 +20,12 @@ class ParaDispatcher(sockets: List[String]) extends Dispatcher(sockets) {
     //a. Output the report header.
     println("ParaBond Portfolio Analysis")
     println("Alex Shah")
-    println("4/28/18")
-    val numCores = Runtime.getRuntime().availableProcessors()
+    println("5/1/18")
+    val numCores = Runtime.getRuntime().availableProcessors() //8
     println("Cores: " + numCores)
     println("Number of workers: " + workers.length)
     println;
-    println("REPORT:");
+    println("Basic Node Report:");
     println;
 
     //Header
@@ -40,7 +40,7 @@ class ParaDispatcher(sockets: List[String]) extends Dispatcher(sockets) {
     //b. Get the next n, that is, number of portfolios to price.
     val n = getPropertyOrElse("n", 100)
 
-    val ladder = List(100, 2000, 4000, 8000, 16000, 32000, 64000, 100000)
+    val ladder = List(1000, 2000, 4000, 8000, 16000, 32000, 64000, 100000)
 
     //j. Repeat step b for each rung
     ladder.foreach { rung =>
@@ -49,6 +49,7 @@ class ParaDispatcher(sockets: List[String]) extends Dispatcher(sockets) {
       //c. Reset the check portfolio prices.
       val checkIds = checkReset(rung)
 
+      //start timing tn
       val t0 = System.nanoTime()
 
       //d. Create two workers by passing the dispatcher constructor two sockets.
@@ -60,6 +61,7 @@ class ParaDispatcher(sockets: List[String]) extends Dispatcher(sockets) {
       workers(0) ! Partition(rung / 2, 0)
       workers(1) ! Partition(rung / 2, rung / 2)
 
+      //receive replies from the 2 workers
       val replies = for (k <- 0 until workers.length) yield receive
 
       // sum up partial T1's
@@ -68,18 +70,19 @@ class ParaDispatcher(sockets: List[String]) extends Dispatcher(sockets) {
           case task: Task if (task.kind == Task.REPLY) =>
             import parascale.parabond.util.Result
             val result = task.payload.asInstanceOf[Result]
-            //i. Output the performance statistics.
+
             sum + (result.t1 - result.t0)
         }
       } seconds
 
+      //i. Output the performance statistics.
       val t1 = System.nanoTime()
       val TN = (t1 - t0) seconds
       val speedup = T1 / TN
       val e = speedup / numCores
       val missed = check(checkIds).length
 
-      println("%-9s %-7s %-7.2f %-7.2f %2.4f %2.4f ".format(n, missed, T1, TN, speedup, e))
+      println("%-9s %-7s %-7.2f %-7.2f %2.4f %2.4f ".format(rung, missed, T1, TN, speedup, e))
     }
   }
 }
