@@ -25,7 +25,7 @@ class ParaDispatcher(sockets: List[String]) extends Dispatcher(sockets) {
     println("Cores: " + numCores)
     println("Number of workers: " + workers.length)
     println;
-    println("Basic Node Report:");
+    println("Memory Bound Node Report:");
     println;
 
     //Header

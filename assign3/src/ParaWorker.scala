@@ -13,7 +13,7 @@ object ParaWorker extends App {
   val nhosts = getPropertyOrElse("nhosts", 1)
 
   //receive parameter to change node type, defaults to basic node
-  val prop = getPropertyOrElse("node","parabond.cluster.BasicNode")
+  val prop = getPropertyOrElse("node","parabond.cluster.MemoryBoundNode")
   val clazz = Class.forName(prop)
   import parabond.cluster.Node
   val node = clazz.newInstance.asInstanceOf[Node]
