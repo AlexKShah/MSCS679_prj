@@ -43,7 +43,10 @@ class ParaDispatcher(sockets: List[String]) extends Dispatcher(sockets) {
     val numCores = Runtime.getRuntime().availableProcessors() //8
     println("Cores: " + numCores)
     println("Number of workers: " + workers.length)
-    //TODO hosts
+    print ("Hosts : ")
+    workers.foreach { worker =>
+      print(worker.forwardAddr + " ")
+    }
     println;
     println("Memory Bound Node Report:");
     println;
