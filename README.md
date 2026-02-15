@@ -2,9 +2,9 @@
 ### 2018-05-02
 
 ## Overview
-This project uses Dispatcher/Worker architecture to distribute simulated financial bond portfolio analysis to networked nodes, performing concurrent calculations. The test cases are thread or memory limited.
+This project uses Dispatcher/Worker architecture to distribute simulated financial bond portfolio analysis to networked nodes, performing concurrent calculations. The test cases are thread or memory limited. The project uses a nosql monogodb document database.
 
-**Key Concepts** Scala, parallel programming, networked nodes
+**Key Concepts** Scala, parallel programming, networked nodes, MongoDB
 
 [Code](assign3/src)
 
